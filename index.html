@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Handwriting OCR with Google Vision API</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      text-align: center;
+      background-color: #fff;
+      padding: 30px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    #result {
+      margin-top: 20px;
+    }
+
+    #detected-text {
+      font-size: 16px;
+      color: #333;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Handwriting OCR with Google Vision API</h1>
+    <input type="file" id="file-input" accept="image/*">
+    <button onclick="uploadImage()">Upload Image</button>
+    <div id="result">
+      <p id="detected-text">Detected text will appear here...</p>
+    </div>
+  </div>
+
+  <script>
+    const apiKey = '19df936a90aadc5ae7b5b561d4ff18d279243d6a'; // Your Google Cloud Vision API Key
+
+    // Function to upload the image and process it using the Vision API
+    function uploadImage() {
+      const fileInput = document.getElementById('file-input');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('Please select an image file.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = function () {
+        const base64Image = reader.result.split(',')[1]; // Get the base64 image data
+
+        // Call Google Cloud Vision API
+        fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            requests: [
+              {
+                image: {
+                  content: base64Image,
+                },
+                features: [
+                  {
+                    type: 'DOCUMENT_TEXT_DETECTION', // Detect text, including handwriting
+                  },
+                ],
+              },
+            ],
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            const detectedText = data.responses[0].fullTextAnnotation
+              ? data.responses[0].fullTextAnnotation.text
+              : 'No text detected';
+            displayDetectedText(detectedText);
+          })
+          .catch((error) => {
+            console.error('Error:', error);
+            alert('Error processing image. Please try again.');
+          });
+      };
+
+      reader.readAsDataURL(file); // Read the image as a base64 string
+    }
+
+    // Function to display the detected text
+    function displayDetectedText(text) {
+      const resultDiv = document.getElementById('result');
+      const detectedTextParagraph = document.getElementById('detected-text');
+      detectedTextParagraph.textContent = text;
+    }
+  </script>
+</body>
+</html>
